@@ -1,0 +1,293 @@
+import React, {useState, useEffect, useRef} from "react";
+import {faCheck, faTimes, faInfoCircle} from "@fortawesome/free-solid-svg-icons";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import './Register.css';
+import axios from './axios';
+
+// Asset Imports
+import user_icon from './Assets/userf.png'
+import password_icon from './Assets/login_signup.jpg'
+import email_icon from './Assets/email_icon.jpg'
+import welcome_icon from './Assets/user_full.png'
+
+// REGEX Constants
+const USER_REGEX = /^[A-Za-z][A-Za-z0-9!@#$%^&*()=+?/_-]{3,23}$/;
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()/?-_=+]).{8,24}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const REGISTER_URL = '/register';
+
+const RegisterScreen = () => {
+    // Refs
+    const userRef = useRef();
+    const errRef = useRef();
+
+    // State for Username
+    const [username, setUsername] = useState('');
+    const [validName, setValidName] = useState(false);
+    const [userFocus, setUserFocus] = useState(false);
+
+    // State for Password
+    const [password, setPassword]=useState('');
+    const [validPwd, setValidPwd]=useState(false);
+    const [pwdFocus, setPwdFocus]=useState(false);
+
+    // State for Re-type Password
+    const [matchPwd, setMatchPwd]=useState('');
+    const [validMatch, setValidMatch]=useState(false);
+    const [matchFocus, setMatchFocus]=useState(false);
+    
+    // State for Email (Added)
+    const [email, setEmail] = useState('');
+    const [validEmail, setValidEmail] = useState(false);
+    const [emailFocus, setEmailFocus] = useState(false);
+
+    // General State
+    const [errMsg, setErrMsg]=useState('');
+    const [success, setSuccess]=useState(false);
+
+    // --- useEffects ---
+
+    // Focus on username input on load
+    useEffect(() => {
+        // Safe check for current to prevent errors on mount if ref isn't immediately attached
+        if (userRef.current) {
+            userRef.current.focus(); 
+        }
+    }, []);
+
+    // Validate Username
+    useEffect(() => {
+        const result = USER_REGEX.test(username);
+        setValidName(result);
+    }, [username]);
+    
+    // Validate Email
+    useEffect(() => {
+        const result = EMAIL_REGEX.test(email);
+        setValidEmail(result);
+    }, [email]);
+
+
+    // Validate Password and Match Password
+    useEffect(() => {
+        const result = PWD_REGEX.test(password);
+        setValidPwd(result);
+        const match = password === matchPwd;
+        setValidMatch(match);
+    }, [password, matchPwd]);
+
+    // Clear error message when user changes inputs
+    useEffect(() => {
+        setErrMsg('');
+    }, [username, password, matchPwd, email]);
+
+    // Handle Form Submission
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        // Final client-side validation check
+        const v1 = USER_REGEX.test(username);
+        const v2 = PWD_REGEX.test(password);
+        const v3 = EMAIL_REGEX.test(email);
+        
+        if (!v1 || !v2 || !validMatch || !v3) {
+            setErrMsg("Invalid Entry or Missing Fields");
+            return;
+        }
+        
+        try {
+            const response = await axios.post(REGISTER_URL,
+                JSON.stringify({ username, password, email}),               
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    withCredentials: true,
+                });
+                console.log(response.data);
+                console.log(response.accessToken);
+                console.log(JSON.stringify(response))
+                setSuccess(true);
+             } catch (error){
+                        if (!error?.response){
+                            setErrMsg('No Server Response');
+                        }else if (error.response?.status === 409){
+                            setErrMsg('Username or Email already taken');
+                        }else{
+                            setErrMsg('Registration Failed');
+                        }
+                        errRef.current.focus();
+                          }
+        
+    }
+
+
+    return (
+        <div>
+            <div className="container">
+                <div className="welcome">
+                    <img src={welcome_icon} alt="" style={{ width: '35px', height: '40px' }}/>
+                   <div>WELCOME TO GERA</div>               
+                   </div>
+                <div className="createaccount">Create your account</div>
+                <div className="underline"></div>
+                
+                {/* --- REGISTER FORM / SUCCESS MESSAGE --- */}
+                
+                {success ? (
+                    <section style={{textAlign: 'center', padding: '20px'}}>
+                        <h1>Registration Successful!</h1>
+                        <p>A verification link has been sent to **{email}**. Please check your inbox and confirm your email address to complete your registration.</p>
+                        <p style={{marginTop: '20px'}}>
+                            <a href="/login">Go to Login</a>
+                        </p>
+                    </section>
+                ) : (
+                    <section>
+                        <p 
+                            ref={errRef} 
+                            className={errMsg ? "errmsg" : "offscreen"} 
+                            aria-live="assertive"
+                            style={{marginTop: '10px'}}
+                        >{errMsg}</p>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="header">
+                                {/* USER NAME INPUT */}
+                                <div className="text" style={{marginLeft: '-68px'}}>
+                                    User Name
+                                    <span className={validName ? "valid" : "hide"}>
+                                        <FontAwesomeIcon icon={faCheck} />
+                                    </span>
+                                    <span className={validName || !username ? "hide" : "invalid"}>
+                                        <FontAwesomeIcon icon={faTimes} />
+                                    </span>
+                                </div>
+                                <div className="inputbox">
+                                    <img src={user_icon} alt="" style={{ width: '18px', height: '20px' }}/>
+                                    <div className="box" style={{marginLeft: '12px'}}>
+                                        <input
+                                            type="text"
+                                            id="username"
+                                            ref={userRef}
+                                            autoComplete="off"
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            value={username}
+                                            required
+                                            aria-invalid={validName ? "false" : "true"}
+                                            aria-describedby="uidnote"
+                                            onFocus={() => setUserFocus(true)}
+                                            onBlur={() => setUserFocus(false)}
+                                        />
+                                    </div> 
+                                </div>
+                                <p id="uidnote" className={userFocus && username && !validName ? "instructions" : "offscreen"}>
+                                    <FontAwesomeIcon icon={faInfoCircle} />4 to 24 charcters and begins with a letter.
+                                </p>
+
+                                {/* PASSWORD INPUT */}
+                                <div className="text" style={{marginLeft: '-75px'}}>
+                                    Password
+                                    <span className={validPwd ? "valid" : "hide"}>
+                                        <FontAwesomeIcon icon={faCheck} />
+                                    </span>
+                                    <span className={validPwd || !password ? "hide" : "invalid"}>
+                                        <FontAwesomeIcon icon={faTimes} />
+                                    </span>
+                                </div>
+                                <div className="inputbox">
+                                    <img src={password_icon} alt="" style={{ width: '15px', height: '20px' }}/>
+                                    <div className="box" style={{marginLeft: '13px'}}>
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            value={password}
+                                            required
+                                            aria-invalid={validPwd ? "false" : "true"}
+                                            aria-describedby="pwdnote"
+                                            onFocus={() => setPwdFocus(true)}
+                                            onBlur={()=>setPwdFocus(false)}
+                                        />
+                                    </div>
+                                </div>
+                                <p id="pwdnote" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
+                                    <FontAwesomeIcon icon={faInfoCircle} />8 to 24 characters.<br/>Must have: uppercase, lowercase, number and special character.
+                                </p>
+
+                                {/* RE-TYPE PASSWORD INPUT (Confirm Password) */}
+                                <div className="text" style={{marginLeft: '-30px'}}>
+                                    Re-type Password
+                                    <span className={validMatch && matchPwd ? "valid" : "hide"}>
+                                        <FontAwesomeIcon icon={faCheck} />
+                                    </span>
+                                    <span className={validMatch || !matchPwd ? "hide" : "invalid"}>
+                                        <FontAwesomeIcon icon={faTimes} />
+                                    </span>
+                                </div>
+                                <div className="inputbox">
+                                    <img src={password_icon} alt="" style={{ width: '15px', height: '20px' }}/>
+                                    <div className="box" style={{marginLeft: '15px'}}>
+                                        <input
+                                            type="password"
+                                            id="confirm_pwd"
+                                            onChange={(e) => setMatchPwd(e.target.value)}
+                                            value={matchPwd}
+                                            required
+                                            aria-invalid={validMatch ? "false" : "true"}
+                                            aria-describedby="confirmnote"
+                                            onFocus={() => setMatchFocus(true)}
+                                            onBlur={()=>setMatchFocus(false)}
+                                        />
+                                    </div>
+                                </div>
+                                <p id="confirmnote" className={matchFocus && !validMatch ? "instructions" : "offscreen"}>
+                                    <FontAwesomeIcon icon={faInfoCircle} />Passwords must match.
+                                </p>
+
+                                {/* EMAIL ADDRESS INPUT */}
+                                <div className="text" style={{marginLeft: '-50px'}}>
+                                    Email Address
+                                    <span className={validEmail ? "valid" : "hide"}>
+                                        <FontAwesomeIcon icon={faCheck} />
+                                    </span>
+                                    <span className={validEmail || !email ? "hide" : "invalid"}>
+                                        <FontAwesomeIcon icon={faTimes} />
+                                    </span>
+                                </div>
+                                <div className="inputbox"> 
+                                    <img src={email_icon} alt="" style={{ width: '25px', height: '20px' }}/>
+                                    <div className="box" style={{marginLeft: '5px'}}>
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            value={email}
+                                            required
+                                            aria-invalid={validEmail ? "false" : "true"}
+                                            aria-describedby="emailnote"
+                                            onFocus={() => setEmailFocus(true)}
+                                            onBlur={()=>setEmailFocus(false)}
+                                        />
+                                    </div>
+                                </div>
+                                <p id="emailnote" className={emailFocus && !validEmail ? "instructions" : "offscreen"}>
+                                    <FontAwesomeIcon icon={faInfoCircle} />Must be a valid email address format (e.g., user@domain.com).
+                                </p>
+                        
+                                <div className="submit">
+                                    <button 
+                                        disabled={!validName || !validPwd || !validMatch || !validEmail}
+                                        type="submit"
+                                    >
+                                        Create
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+                )}
+                {/* --- END REGISTER FORM / SUCCESS MESSAGE --- */}
+             </div>
+        </div>
+    )
+}
+export default RegisterScreen;

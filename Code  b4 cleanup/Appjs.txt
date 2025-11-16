@@ -1,0 +1,22 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginScreen from './Login';
+import RegisterScreen from './Register';
+import './Register.css';
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Default route redirects to login */}
+        <Route path="/" element={<Navigate to="/LoginScreen" />} />
+
+        {/* Login and Register routes */}
+        <Route path="/LoginScreen" element={<LoginScreen />} />
+        <Route path="/register" element={<RegisterScreen />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
