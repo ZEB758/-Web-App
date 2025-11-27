@@ -1,114 +1,99 @@
-// Login.jsx (Rewritten for Username OR Email Login)
-
 import React, { useState, useEffect, useRef } from "react"; 
 import { useNavigate, Link } from 'react-router-dom';
 import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import './Login.css'; // Using the correct CSS file
-import axios from './axios';
+import axios from './axios'; // Ensure this points to your configured Axios instance
+import './Login.css';
 
-// Asset Imports
-import user_icon from './Assets/userf.png'; 
+import user_icon from './Assets/userf.png';
 import password_icon from './Assets/login_signup.jpg';
 import welcome_icon from './Assets/user_full.png';
 
-// REGEX Constants
-const USER_REGEX = /^[A-Za-z][A-Za-z0-9!@#$%^&*()=+?/_-]{3,23}$/; // Reintroduced
+const USER_REGEX = /^[A-Za-z][A-Za-z0-9!@#$%^&*()=+?/_-]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()/?-_=+]).{8,24}$/;
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const LoginScreen = () => {
     const navigate = useNavigate();
 
-    // Refs
-    const identifierRef = useRef(null); // Combined ref
+    const userRef = useRef(null);
     const errRef = useRef(null);
 
-    // State for Combined Identifier (Username OR Email)
-    const [identifier, setIdentifier] = useState(''); 
-    const [isValidIdentifier, setIsValidIdentifier] = useState(false); 
-    const [identifierFocus, setIdentifierFocus] = useState(false); 
-    const [isEmail, setIsEmail] = useState(false); // New state to track if input looks like an email
+    const [username, setUsername] = useState('');
+    const [validName, setValidName] = useState(false);
+    const [userFocus, setUserFocus] = useState(false);
 
-    // State for Password (Unchanged)
     const [password, setPassword] = useState('');
     const [validPwd, setValidPwd] = useState(false);
     const [pwdFocus, setPwdFocus] = useState(false);
 
-    // General State (Unchanged)
     const [errMsg, setErrMsg] = useState('');
     const [success, setSuccess] = useState(false); 
     const [loading, setLoading] = useState(false);
 
-    // Effect to set focus on the first input on load
     useEffect(() => {
-        identifierRef.current?.focus(); 
+        userRef.current?.focus();
     }, []);
 
-    // Effect for Combined Validation (Username OR Email)
     useEffect(() => {
-        const isEmailFormat = EMAIL_REGEX.test(identifier);
-        const isUsernameFormat = USER_REGEX.test(identifier);
-        
-        // Identifier is valid if it passes EITHER email or username format
-        setIsValidIdentifier(isEmailFormat || isUsernameFormat);
-        
-        // Track if it's an email format for API payload logic
-        setIsEmail(isEmailFormat);
+        setValidName(USER_REGEX.test(username));
+    }, [username]);
 
-    }, [identifier]);
-
-    // Effect to validate Password (Unchanged)
     useEffect(() => {
-        const result = PWD_REGEX.test(password);
-        setValidPwd(result);
+        setValidPwd(PWD_REGEX.test(password));
     }, [password]);
 
-    // Effect to clear error message when inputs change
     useEffect(() => {
         setErrMsg('');
-    }, [identifier, password]); 
+    }, [username, password]);
 
-    // Handle Form Submission 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Final combined validation
-        if (!isValidIdentifier || !validPwd) {
-            setErrMsg("Invalid Identifier or Password Format");
+
+        const v1 = USER_REGEX.test(username);
+        const v2 = PWD_REGEX.test(password);
+
+        if (!v1 || !v2) {
+            setErrMsg("Invalid Entry or Missing Fields");
             return;
         }
 
         setLoading(true);
         setErrMsg('');
-        const LOGIN_URL = '/login'; // API endpoint for login
-
-        // Determine the payload based on the identifier format
-        let payload;
-        if (isEmail) {
-            payload = { email: identifier, password }; // Send as 'email'
-        } else {
-            payload = { username: identifier, password }; // Send as 'username'
-        }
 
         try {
-            const response = await axios.post(
-                LOGIN_URL,
-                payload, // <== CRITICAL CHANGE: Dynamic payload
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    withCredentials: true,
-                }
-            );
-            
-            setSuccess(true);
-            navigate('/dashboard', { replace: true }); 
+            // 1. REAL API CALL
+            // Sends username and password to your Node backend
+            const response = await axios.post('/login', { 
+                username: username, 
+                password: password 
+            });
 
-        } catch (error) {
-            if (!error?.response) {
-                setErrMsg('No Server Response');
-            } else if (error.response?.status === 401) {
-                setErrMsg('Invalid Credentials'); 
+            // 2. CHECK RESPONSE
+            // Assuming your server returns: { success: true, user: { user_id: 1, username: "..." } }
+            if (response.data.success) {
+                const userData = response.data.user;
+
+                // 3. SAVE REAL USER DATA TO STORAGE
+                // This overwrites any previous session with the correct ID from the DB
+                localStorage.setItem("user", JSON.stringify(userData));
+
+                console.log("Login Successful:", userData); // Debugging
+                
+                setSuccess(true);
+                navigate('/dashboard', { replace: true });
+            } else {
+                setErrMsg(response.data.message || "Login Failed");
+            }
+
+        } catch (err) {
+            if (!err?.response) {
+                setErrMsg('No Server Response (Is Backend Running?)');
+            } else if (err.response?.status === 400) {
+                setErrMsg('Missing Username or Password');
+            } else if (err.response?.status === 401) {
+                setErrMsg('Unauthorized: Incorrect Username or Password');
+            } else if (err.response?.status === 404) {
+                setErrMsg('User not found');
             } else {
                 setErrMsg('Login Failed');
             }
@@ -117,28 +102,17 @@ const LoginScreen = () => {
             setLoading(false);
         }
     }
-    
-    // Helper to generate instructions text dynamically
-    const getInstructions = () => {
-        if (isEmail) {
-            return "Must be a valid email address format (e.g., user@domain.com).";
-        } else {
-            return "4 to 24 characters and begins with a letter (for username).";
-        }
-    }
-
 
     return (
         <section>
             {success ? (
                 <section>
                     <h1>Success!</h1>
-                    <p>Redirecting to dashboard...<Link to="/">Go to Home</Link></p>
+                    <p><Link to="/">Go to Home</Link></p>
                 </section>
             ) : (
                 <div className="container">
-                    {/* Error message section */}
-                    <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
+                    <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"}>{errMsg}</p>
                     
                     <div className="welcome">
                         <img src={welcome_icon} alt="" style={{ width: '35px', height: '40px' }}/>
@@ -149,50 +123,44 @@ const LoginScreen = () => {
                     <div className="underline"></div>
                     
                     <form onSubmit={handleSubmit}>
-                        <div className="header">
-                            {/* IDENTIFIER INPUT (Username OR Email) */}
+                        <div className="head">
+
+                            {/* USERNAME */}
                             <div className="text" style={{marginLeft: '-68px'}}>
-                                Email or Username {/* <== CHANGED LABEL */}
-                                <span className={isValidIdentifier ? "valid" : "hide"}> {/* <== Used combined valid state */}
-                                    <FontAwesomeIcon icon={faCheck} />
-                                </span>
-                                <span className={isValidIdentifier || !identifier ? "hide" : "invalid"}> {/* <== Used combined valid state */}
-                                    <FontAwesomeIcon icon={faTimes} />
-                                </span>
+                                User Name
+                                <span className={validName ? "valid" : "hide"}><FontAwesomeIcon icon={faCheck} /></span>
+                                <span className={validName || !username ? "hide" : "invalid"}><FontAwesomeIcon icon={faTimes} /></span>
                             </div>
+
                             <div className="inputbox">
                                 <img src={user_icon} alt="" style={{ width: '18px', height: '20px' }}/>
                                 <div className="box" style={{marginLeft: '12px'}}/>
                                 <input
-                                    type="text" // Kept as 'text' for flexibility
-                                    id="identifier" // <== CHANGED ID
-                                    ref={identifierRef} 
-                                    autoComplete="username" // General autocomplete
-                                    onChange={(e) => setIdentifier(e.target.value)} // <== Used setIdentifier
-                                    value={identifier} // <== Used identifier state
+                                    type="text"
+                                    id="username"
+                                    ref={userRef}
+                                    autoComplete="off"
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    value={username}
                                     required
-                                    aria-invalid={isValidIdentifier ? "false" : "true"} // <== Used isValidIdentifier
-                                    aria-describedby="identifiernote" 
-                                    onFocus={() => setIdentifierFocus(true)} // <== Used new focus setter
-                                    onBlur={() => setIdentifierFocus(false)} 
-                                    placeholder="Username or Email Address"
+                                    aria-invalid={validName ? "false" : "true"}
+                                    aria-describedby="uidnote"
+                                    onFocus={() => setUserFocus(true)}
+                                    onBlur={() => setUserFocus(false)}
                                 />
-                                <p id="identifiernote" className={identifierFocus && identifier && !isValidIdentifier ? 
-                                    "instructions" : "offscreen"}>
-                                    <FontAwesomeIcon icon={faInfoCircle} />{getInstructions()} {/* <== DYNAMIC INSTRUCTIONS */}
+                                </div>
+                                <p id="uidnote" className={userFocus && username && !validName ? "instructions" : "offscreen"}>
+                                    <FontAwesomeIcon icon={faInfoCircle} /> 4-24 characters. Must begin with a letter.
                                 </p>
-                            </div>
                             
-                            {/* PASSWORD INPUT (Unchanged) */}
+
+                            {/* PASSWORD */}
                             <div className="text" style={{marginLeft: '-75px'}}>
                                 Password
-                                <span className={validPwd ? "valid" : "hide"}>
-                                    <FontAwesomeIcon icon={faCheck} />
-                                </span>
-                                <span className={validPwd || !password ? "hide" : "invalid"}>
-                                    <FontAwesomeIcon icon={faTimes} />
-                                </span>
+                                <span className={validPwd ? "valid" : "hide"}><FontAwesomeIcon icon={faCheck} /></span>
+                                <span className={validPwd || !password ? "hide" : "invalid"}><FontAwesomeIcon icon={faTimes} /></span>
                             </div>
+
                             <div className="inputbox">
                                 <img src={password_icon} alt="" style={{ width: '15px', height: '20px' }}/>
                                 <div className="box" style={{marginLeft: '13px'}}/>
@@ -206,27 +174,27 @@ const LoginScreen = () => {
                                     aria-describedby="pwdnote"
                                     onFocus={() => setPwdFocus(true)}
                                     onBlur={()=>setPwdFocus(false)}
-                                /> 
+                                />
+                                </div>
                                 <p id="pwdnote" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
-                                    <FontAwesomeIcon icon={faInfoCircle} />8 to 24 characters. Must include: uppercase, lowercase, number and special character.
+                                    <FontAwesomeIcon icon={faInfoCircle} /> 8–24 chars, uppercase, lowercase, number, special character.
                                 </p>
-                            </div>
+                            
 
-                            {/* NEW: Link to Register/Sign up */}
+                            {/* Sign Up Link */}
                             <Link to="/register" className="signup">Sign up</Link> 
 
-                            {/* Login Button */}
-                            <button 
-                                disabled={!isValidIdentifier || !validPwd || loading} // <== Used combined valid state
-                                type="submit"
-                            >
+                            {/* LOGIN BUTTON */}
+                            <button disabled={!validName || !validPwd || loading} type="submit">
                                 {loading ? 'Logging In...' : 'Login'}
                             </button>
+
                         </div>
                     </form>
                 </div>
             )}
         </section>
-    )
+    );
 }
+
 export default LoginScreen;

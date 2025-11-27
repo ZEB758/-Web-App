@@ -1,21 +1,28 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginScreen from './Login';
-import RegisterScreen from './Register';
-import './Register.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LoginScreen from './Login'; 
+import Register from './Register';
+import Dashboard from './Dashboard';
+import Profile from './Profile';
+import Select from './Select';   // ← IMPORT THIS
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/* Default route redirects to login */}
-        <Route path="/" element={<Navigate to="/LoginScreen" />} />
+        {/* Login is the default page */}
+        <Route path="/" element={<LoginScreen />} />
+        <Route path="/register" element={<Register />} />
+        
+        {/* Protected pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
 
-        {/* Login and Register routes */}
-        <Route path="/LoginScreen" element={<LoginScreen />} />
-        <Route path="/register" element={<RegisterScreen />} />
+        {/* NEW: DailySchedule route */}
+        <Route path="/select" element={<Select userName="John Doe" userId="12345" />} 
+        />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 

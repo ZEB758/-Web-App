@@ -1,31 +1,28 @@
-// App.js 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginScreen from './Login';      // Assuming Login.jsx exports LoginScreen
-import RegisterScreen from './Register'; 
-// import './Register.css'; // Remove this if you haven't already
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LoginScreen from './Login'; 
+import Register from './Register';
+import Dashboard from './Dashboard';
+import Profile from './Profile';
+import Select from './Select';   // ← IMPORT THIS
 
 function App() {
-  const LOGIN_PATH = "/login"; // The first page you want users to see
-
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/*
-          This is the line that ensures the app starts on the login page.
-          When a user navigates to the root path ("/") (which happens when the app loads),
-          it immediately redirects them to the LOGIN_PATH ("/login").
-        */}
-        <Route path="/" element={<Navigate to={LOGIN_PATH} replace />} /> 
-
-        {/* The actual login page route */}
-        <Route path={LOGIN_PATH} element={<LoginScreen />} />
+        {/* Login is the default page */}
+        <Route path="/" element={<LoginScreen />} />
+        <Route path="/register" element={<Register />} />
         
-        {/* Other routes */}
-        <Route path="/register" element={<RegisterScreen />} />
-        <Route path="/dashboard" element={<h1>User Dashboard</h1>} /> 
+        {/* Protected pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
+
+        {/* NEW: DailySchedule route */}
+        <Route path="/select" element={<Select userName="John Doe" userId="12345" />} 
+        />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 

@@ -1,0 +1,247 @@
+/* General Page Layout */
+body{
+    background-color: #AFE1FF;
+}
+.page-wrapper {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- 1. Top Header --- */
+.top-header {
+    background-color: #fff;
+    padding: 15px 25px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Hamburger Menu Button (Hidden on Desktop) */
+.menu-btn {
+    display: none; /* Hidden by default */
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #333;
+    padding: 0;
+}
+
+.user-name {
+    margin: 0;
+    font-size: 22px;
+    color: #3c009d; /* Theme Color */
+    text-transform: capitalize;
+    line-height: 1.2;
+}
+
+.selected-date {
+    margin: 2px 0 0 0;
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* --- 2. Responsive Navbar (Default: Horizontal Tabs) --- */
+.selection-navbar {
+    display: flex;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.nav-item {
+    flex: 1; 
+    text-align: center;
+    padding: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #777;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-item:hover {
+    background-color: #f9f9f9;
+    color: #3c009d;
+}
+
+.nav-item.active {
+    color: #3c009d;
+    border-bottom: 3px solid #3c009d;
+    background-color: #f0ebfa;
+}
+
+.sidebar-close-btn {
+    display: none; /* Hidden on Desktop */
+}
+
+/* --- 3. Content Area --- */
+.content-container {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 90%;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Dropdown */
+.dropdown-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #444;
+}
+
+.main-dropdown {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+}
+
+/* Time Grid */
+.time-label {
+    font-weight: bold;
+    color: #444;
+    margin-top: 10px;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 12px;
+}
+
+.time-slot {
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.time-slot:hover {
+    background-color: #e2e6ea;
+    border-color: #adb5bd;
+}
+
+.time-slot.selected {
+    background-color: #3c009d;
+    color: white;
+    border-color: #3c009d;
+    box-shadow: 0 2px 5px rgba(60, 0, 157, 0.3);
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.cancel-btn, .confirm-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.cancel-btn { background-color: #dc3545; color: white; }
+.confirm-btn { background-color: #28a745; color: white; font-weight: bold; }
+.error-msg { color: #d9534f; background: #fde8e8; padding: 10px; text-align: center; border-radius: 5px; }
+
+/* ---------------------------------------------------- */
+/*                  MOBILE VIEW ( < 768px )             */
+/* ---------------------------------------------------- */
+@media (max-width: 768px) {
+    
+    /* 1. Show Menu Button */
+    .menu-btn {
+        display: block;
+    }
+
+    /* 2. Transform Navbar into Sidebar (Drawer) */
+    .selection-navbar {
+        position: fixed;
+        top: 0;
+        left: -260px; /* Start hidden off-screen */
+        width: 250px;
+        height: 100%;
+        background-color: white;
+        flex-direction: column; /* Stack items vertically */
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+        transition: left 0.3s ease-in-out;
+        padding-top: 20px;
+    }
+
+    /* 3. When Sidebar is Open */
+    .selection-navbar.mobile-open {
+        left: 0; /* Slide in */
+    }
+
+    /* 4. Sidebar Items Styling */
+    .nav-item {
+        text-align: left;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        font-size: 18px;
+    }
+
+    .nav-item.active {
+        border-bottom: 1px solid #eee;
+        border-left: 5px solid #3c009d; /* Left indicator instead of bottom */
+        background-color: #f4f6f9;
+    }
+
+    /* 5. Close Button (X) in Sidebar */
+    .sidebar-close-btn {
+        display: block;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 30px;
+        cursor: pointer;
+        color: #888;
+    }
+
+    /* 6. Dark Overlay Background */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    /* Adjust Content for Mobile */
+    .content-container {
+        width: 95%;
+        padding: 15px;
+    }
+}

@@ -1,0 +1,295 @@
+/* =========================================
+   1. BLUE BACKGROUND & LAYOUT
+   ========================================= */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    /* The requested Blue Background */
+    background-color: #3c009d; 
+    font-family: 'Segoe UI', sans-serif;
+    overflow: hidden; /* Prevents double scrolling */
+}
+
+.main-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #AFE1FF; /* Ensures the wrapper is blue too */
+}
+
+.container {
+    background-color: #ffffff;
+    width: 480px; /* Fixed width as requested */
+    max-width: 100%;
+    height: 95vh; /* Almost full height */
+    border-radius: 30px; /* Modern rounded corners */
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* =========================================
+   2. NEW HEADER GRID
+   ========================================= */
+.header-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr; /* Left, Center (Wide), Right */
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+/* Left: User Icon */
+.header-left img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f0f0f0;
+}
+
+/* Center: Welcome Text */
+.header-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.welcome-sub {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.welcome-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #333;
+    text-transform: uppercase;
+}
+
+/* Right: Settings Icons */
+.header-right {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.header-right img {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.header-right img:hover {
+    transform: rotate(15deg);
+}
+
+/* =========================================
+   3. CALENDAR AREA
+   ========================================= */
+.createaccount {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.error-banner {
+    background: #ffe6e6;
+    color: red;
+    padding: 8px;
+    font-size: 13px;
+    text-align: center;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.calendar {
+    flex: 1; /* Pushes content to fill space */
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.calendar-header button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #3c009d;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.month-year {
+    font-weight: bold;
+    color: #444;
+}
+
+.days, .dates {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+}
+
+.days div {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 10px;
+}
+
+.dates div {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.dates div:hover:not(.disabled) {
+    background-color: #f0ebfa;
+    color: #3c009d;
+}
+
+.today {
+    background-color: #3c009d;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(60, 0, 157, 0.4);
+}
+
+/* =========================================
+   4. FOOTER (3 Icons Equally Spaced)
+   ========================================= */
+.footer {
+    margin-top: auto;
+    background: #ffffff;
+    border-top: 1px solid #f4f4f4;
+    padding: 15px 10px 5px 10px; /* Top, Right, Bottom, Left */
+    
+    /* Layout: 3 items equally spaced */
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.footer-item {
+    flex: 1; /* Each item takes equal width */
+    display: flex;
+    justify-content: center; /* Center icon inside its section */
+    cursor: pointer;
+}
+
+.footer-icon {
+    width: 26px;
+    height: 26px;
+    opacity: 0.7;
+    transition: 0.2s;
+}
+
+.footer-item:hover .footer-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Special styling for the center Schedule Icon */
+.icon-wrapper {
+    width: 55px;
+    height: 55px;
+    background: linear-gradient(135deg, #3c009d, #6a11cb);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 15px rgba(60, 0, 157, 0.4);
+    margin-top: -30px; /* Floating Effect */
+    border: 4px solid white;
+}
+
+.active-icon {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1); /* Turns black icon white */
+}
+
+/* =========================================
+   5. MODAL STYLES (Keep from previous)
+   ========================================= */
+.modal-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: flex;
+    align-items: flex-end;
+    border-radius: 30px; /* Matches Container */
+}
+
+.modal-content {
+    width: 100%;
+    height: 70%;
+    background: white;
+    border-radius: 25px 25px 0 0;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.modal-body {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.schedule-card {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+}
+
+.equipment-card { border-left: 4px solid #3c009d; }
+.trainer-card { border-left: 4px solid #28a745; }
+
+.card-info { flex: 1; padding: 0 10px; }
+.card-title { font-weight: bold; font-size: 14px; display: block;}
+.card-date { font-size: 12px; color: #888; }
+.card-time { font-weight: bold; font-size: 12px; color: #555; background: #eee; padding: 4px 8px; border-radius: 6px;}
+.close-btn { background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;}

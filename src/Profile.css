@@ -1,0 +1,89 @@
+body{
+    background-color: #AFE1FF;
+}
+.profile-container {
+    padding-bottom: 50px;
+}
+
+.back-btn {
+    background: none;
+    border: 1px solid #6C63FF;
+    color: #6C63FF;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.profile-form {
+    margin-top: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.section-label {
+    font-weight: bold;
+    color: #6C63FF;
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.input-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.input-group input, .input-group select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Read only inputs look slightly different */
+.read-only {
+    background-color: #f0f0f0;
+    color: #555;
+    border: none;
+}
+
+.status-box {
+    font-weight: bold;
+    color: #2e7d32; /* Green text for status */
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #6C63FF;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.save-btn:hover {
+    background-color: #5a52d5;
+}
+
+.alert {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 14px;
+}
+.alert.success { background-color: #d4edda; color: #155724; }
+.alert.error { background-color: #f8d7da; color: #721c24; }

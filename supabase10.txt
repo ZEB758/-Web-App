@@ -1,0 +1,134 @@
+CREATE TYPE membership_status AS ENUM ('current', 'suspended', 'restricted');
+CREATE TYPE equipment_status AS ENUM ('available', 'unavailable', 'maintenance');
+CREATE TYPE trainer_status AS ENUM ('available', 'busy', 'not_on_duty');
+CREATE TYPE request_status AS ENUM ('pending', 'accepted', 'rejected');
+CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled');
+CREATE TYPE admin_role AS ENUM ('superadmin', 'manager');
+
+-- Users table
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- User profiles
+CREATE TABLE user_profiles (
+    profile_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_name VARCHAR(50),
+    date_of_birth DATE,
+    address VARCHAR(255),
+    profile_image VARCHAR(255),
+    membership_months INT DEFAULT 0,
+    membership_status membership_status DEFAULT 'current'
+);
+
+-- Equipment
+CREATE TABLE equipment (
+    equipment_id SERIAL PRIMARY KEY,
+    equipment_name VARCHAR(100) NOT NULL,
+    equipment_image VARCHAR(255),
+    equipment_description TEXT,
+    equipment_status equipment_status DEFAULT 'available'
+);
+
+-- Trainers
+CREATE TABLE trainers (
+    trainer_id SERIAL PRIMARY KEY,
+    trainer_name VARCHAR(100) NOT NULL,
+    training_type VARCHAR(100),
+    status trainer_status DEFAULT 'available'
+);
+
+-- Trainer requests
+CREATE TABLE trainer_requests (
+    request_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id),
+    trainer_id INT NOT NULL REFERENCES trainers(trainer_id),
+    request_date TIMESTAMP DEFAULT NOW(),
+    request_status request_status DEFAULT 'pending',
+    rejection_reason TEXT
+);
+
+-- Training sessions
+CREATE TABLE training_sessions (
+    session_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id),
+    trainer_id INT REFERENCES trainers(trainer_id),
+    equipment_id INT REFERENCES equipment(equipment_id),
+    session_date TIMESTAMP NOT NULL,
+    session_status session_status DEFAULT 'scheduled'
+);
+
+-- Admins
+CREATE TABLE admins (
+    admin_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role admin_role DEFAULT 'manager'
+);
+
+-- Audit log
+CREATE TABLE audit_log (
+    log_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id),
+    action VARCHAR(255),
+    log_timestamp TIMESTAMP DEFAULT NOW()
+);
+
+-- Equipment schedule
+CREATE TABLE equipment_schedule (
+    schedule_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    equipment_id INT NOT NULL REFERENCES equipment(equipment_id) ON DELETE CASCADE,
+    schedule_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (user_id, schedule_date, start_time),
+    UNIQUE (equipment_id, schedule_date, start_time),
+    CHECK (EXTRACT(DOW FROM schedule_date) != 6),  -- Block Saturday (Postgres: 0=Sunday, 6=Saturday)
+    CHECK (
+        (
+            EXTRACT(DOW FROM schedule_date) BETWEEN 1 AND 5
+            AND start_time BETWEEN '08:00:00' AND '21:30:00'
+            AND end_time = start_time + INTERVAL '30 minutes'
+        )
+        OR
+        (
+            EXTRACT(DOW FROM schedule_date) = 0
+            AND start_time BETWEEN '08:00:00' AND '19:30:00'
+            AND end_time = start_time + INTERVAL '30 minutes'
+        )
+    )
+);
+
+-- Trainer schedule
+CREATE TABLE trainer_schedule (
+    schedule_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    trainer_id INT NOT NULL REFERENCES trainers(trainer_id) ON DELETE CASCADE,
+    schedule_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (user_id, schedule_date, start_time),
+    UNIQUE (trainer_id, schedule_date, start_time),
+    CHECK (EXTRACT(DOW FROM schedule_date) != 6),
+    CHECK (
+        (
+            EXTRACT(DOW FROM schedule_date) BETWEEN 1 AND 5
+            AND start_time BETWEEN '08:00:00' AND '21:30:00'
+            AND end_time = start_time + INTERVAL '30 minutes'
+        )
+        OR
+        (
+            EXTRACT(DOW FROM schedule_date) = 0
+            AND start_time BETWEEN '08:00:00' AND '19:30:00'
+            AND end_time = start_time + INTERVAL '30 minutes'
+        )
+    )
+);

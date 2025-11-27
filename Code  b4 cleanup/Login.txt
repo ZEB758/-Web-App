@@ -2,84 +2,56 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from 'react-router-dom';
 import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import './Register.css';
-import axios from './axios';
+import './Login.css';
+import axios from './axios'; // Ensure this points to your configured Axios instance
 
-// Asset Imports
 import user_icon from './Assets/userf.png';
 import password_icon from './Assets/login_signup.jpg';
 import welcome_icon from './Assets/user_full.png';
 
-// REGEX Constants
 const USER_REGEX = /^[A-Za-z][A-Za-z0-9!@#$%^&*()=+?/_-]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()/?-_=+]).{8,24}$/;
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-const LoginScreen = () => { // <== Functional component definition
-    // const { signIn } = useAuth(); // <== UNCOMMENT WHEN AuthContext IS READY
+const LoginScreen = () => {
     const navigate = useNavigate();
 
-    // Refs (Removed TypeScript types like <HTMLInputElement>)
     const userRef = useRef(null);
     const errRef = useRef(null);
 
-    // State for Username
     const [username, setUsername] = useState('');
     const [validName, setValidName] = useState(false);
     const [userFocus, setUserFocus] = useState(false);
 
-    // State for Password
     const [password, setPassword] = useState('');
     const [validPwd, setValidPwd] = useState(false);
     const [pwdFocus, setPwdFocus] = useState(false);
 
-     // State for Email (Added)
-        const [email, setEmail] = useState('');
-        const [validEmail, setValidEmail] = useState(false);
-        const [emailFocus, setEmailFocus] = useState(false);
-
-    // General State
     const [errMsg, setErrMsg] = useState('');
     const [success, setSuccess] = useState(false); 
     const [loading, setLoading] = useState(false);
 
-    // Effect to set focus on the first input on load
     useEffect(() => {
         userRef.current?.focus();
     }, []);
 
-    // Effect to validate Username
     useEffect(() => {
-        const result = USER_REGEX.test(username);
-        setValidName(result);
+        setValidName(USER_REGEX.test(username));
     }, [username]);
 
-    // Effect to validate Password
     useEffect(() => {
-        const result = PWD_REGEX.test(password);
-        setValidPwd(result);
+        setValidPwd(PWD_REGEX.test(password));
     }, [password]);
 
-      // Validate Email
-        useEffect(() => {
-            const result = EMAIL_REGEX.test(email);
-            setValidEmail(result);
-        }, [email]);
-
-    // Effect to clear error message when inputs change
     useEffect(() => {
         setErrMsg('');
-    }, [username, password, email]);
+    }, [username, password]);
 
-    // Handle Form Submission (Removed TypeScript type for 'e')
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Basic local validation
+
         const v1 = USER_REGEX.test(username);
         const v2 = PWD_REGEX.test(password);
-        const v3 = EMAIL_REGEX.test(email);
-        
+
         if (!v1 || !v2) {
             setErrMsg("Invalid Entry or Missing Fields");
             return;
@@ -89,20 +61,43 @@ const LoginScreen = () => { // <== Functional component definition
         setErrMsg('');
 
         try {
-            // JWT Authentication Logic
-            // await signIn({ username, password }); 
-            
-            // --- Placeholder success logic (REMOVE when using AuthContext) ---
-            console.log(`Attempting login for: ${username}`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
-            setSuccess(true);
-            navigate('/dashboard', { replace: true }); 
-            // -----------------------------------------------------------------
+            // 1. REAL API CALL
+            // Sends username and password to your Node backend
+            const response = await axios.post('/login', { 
+                username: username, 
+                password: password 
+            });
 
-        } catch (err) { // <== FIX: Removed the ': any' type annotation
-             // setErrorMsg(err.message || 'Login failed. Check your credentials.'); // Use this with AuthContext
-             setErrMsg("Login Failed: Incorrect Username or Password"); // Placeholder
-             if (errRef.current) errRef.current.focus();
+            // 2. CHECK RESPONSE
+            // Assuming your server returns: { success: true, user: { user_id: 1, username: "..." } }
+            if (response.data.success) {
+                const userData = response.data.user;
+
+                // 3. SAVE REAL USER DATA TO STORAGE
+                // This overwrites any previous session with the correct ID from the DB
+                localStorage.setItem("user", JSON.stringify(userData));
+
+                console.log("Login Successful:", userData); // Debugging
+                
+                setSuccess(true);
+                navigate('/dashboard', { replace: true });
+            } else {
+                setErrMsg(response.data.message || "Login Failed");
+            }
+
+        } catch (err) {
+            if (!err?.response) {
+                setErrMsg('No Server Response (Is Backend Running?)');
+            } else if (err.response?.status === 400) {
+                setErrMsg('Missing Username or Password');
+            } else if (err.response?.status === 401) {
+                setErrMsg('Unauthorized: Incorrect Username or Password');
+            } else if (err.response?.status === 404) {
+                setErrMsg('User not found');
+            } else {
+                setErrMsg('Login Failed');
+            }
+            errRef.current?.focus();
         } finally {
             setLoading(false);
         }
@@ -117,8 +112,7 @@ const LoginScreen = () => { // <== Functional component definition
                 </section>
             ) : (
                 <div className="container">
-                    {/* Error message section */}
-                    <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
+                    <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"}>{errMsg}</p>
                     
                     <div className="welcome">
                         <img src={welcome_icon} alt="" style={{ width: '35px', height: '40px' }}/>
@@ -130,16 +124,14 @@ const LoginScreen = () => { // <== Functional component definition
                     
                     <form onSubmit={handleSubmit}>
                         <div className="header">
-                            {/* USER NAME INPUT */}
+
+                            {/* USERNAME */}
                             <div className="text" style={{marginLeft: '-68px'}}>
                                 User Name
-                                <span className={validName ? "valid" : "hide"}>
-                                    <FontAwesomeIcon icon={faCheck} />
-                                </span>
-                                <span className={validName || !username ? "hide" : "invalid"}>
-                                    <FontAwesomeIcon icon={faTimes} />
-                                </span>
+                                <span className={validName ? "valid" : "hide"}><FontAwesomeIcon icon={faCheck} /></span>
+                                <span className={validName || !username ? "hide" : "invalid"}><FontAwesomeIcon icon={faTimes} /></span>
                             </div>
+
                             <div className="inputbox">
                                 <img src={user_icon} alt="" style={{ width: '18px', height: '20px' }}/>
                                 <div className="box" style={{marginLeft: '12px'}}/>
@@ -156,22 +148,18 @@ const LoginScreen = () => { // <== Functional component definition
                                     onFocus={() => setUserFocus(true)}
                                     onBlur={() => setUserFocus(false)}
                                 />
-                                <p id="uidnote" className={userFocus && username && !validName ?
-                                    "instructions" : "offscreen"}>
-                                    <FontAwesomeIcon icon={faInfoCircle} />4 to 24 charcters and begins with a letter<br/>It must have at least a number (0...9)<br/>It must have at least one symbol (!@#$%^&*()?/_-+=)
+                                <p id="uidnote" className={userFocus && username && !validName ? "instructions" : "offscreen"}>
+                                    <FontAwesomeIcon icon={faInfoCircle} /> 4-24 characters. Must begin with a letter.
                                 </p>
                             </div>
-                            
-                            {/* PASSWORD INPUT */}
+
+                            {/* PASSWORD */}
                             <div className="text" style={{marginLeft: '-75px'}}>
                                 Password
-                                <span className={validPwd ? "valid" : "hide"}>
-                                    <FontAwesomeIcon icon={faCheck} />
-                                </span>
-                                <span className={validPwd || !password ? "hide" : "invalid"}>
-                                    <FontAwesomeIcon icon={faTimes} />
-                                </span>
+                                <span className={validPwd ? "valid" : "hide"}><FontAwesomeIcon icon={faCheck} /></span>
+                                <span className={validPwd || !password ? "hide" : "invalid"}><FontAwesomeIcon icon={faTimes} /></span>
                             </div>
+
                             <div className="inputbox">
                                 <img src={password_icon} alt="" style={{ width: '15px', height: '20px' }}/>
                                 <div className="box" style={{marginLeft: '13px'}}/>
@@ -185,27 +173,26 @@ const LoginScreen = () => { // <== Functional component definition
                                     aria-describedby="pwdnote"
                                     onFocus={() => setPwdFocus(true)}
                                     onBlur={()=>setPwdFocus(false)}
-                                /> 
+                                />
                                 <p id="pwdnote" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
-                                    <FontAwesomeIcon icon={faInfoCircle} />8 to 24 characters. Must include: uppercase, lowercase, number and special character.
+                                    <FontAwesomeIcon icon={faInfoCircle} /> 8–24 chars, uppercase, lowercase, number, special character.
                                 </p>
                             </div>
 
-                            {/* NEW: Link to Register/Sign up */}
+                            {/* Sign Up Link */}
                             <Link to="/register" className="signup">Sign up</Link> 
 
-                            {/* Login Button */}
-                            <button 
-                                disabled={!validName || !validPwd || loading} 
-                                type="submit"
-                            >
+                            {/* LOGIN BUTTON */}
+                            <button disabled={!validName || !validPwd || loading} type="submit">
                                 {loading ? 'Logging In...' : 'Login'}
                             </button>
+
                         </div>
                     </form>
                 </div>
             )}
         </section>
-    )
+    );
 }
+
 export default LoginScreen;
