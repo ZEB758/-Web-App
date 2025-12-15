@@ -1,0 +1,121 @@
+CREATE DATABASE gym_app;
+USE gym_app;
+
+-- 1. USERS TABLE (Merged with Profile Data)
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    
+    -- Auth Details
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    
+    -- Profile Details (Merged)
+    date_of_birth DATE DEFAULT NULL,
+    gender VARCHAR(50) DEFAULT NULL,
+    address VARCHAR(255) DEFAULT NULL,
+    membership_months INT DEFAULT 0,
+    membership_status ENUM('current', 'suspended', 'restricted') DEFAULT 'current',
+    
+    -- Password Reset & Meta
+    reset_token VARCHAR(255) DEFAULT NULL,
+    reset_expires DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. EQUIPMENT
+CREATE TABLE equipment (
+    equipment_id INT AUTO_INCREMENT PRIMARY KEY,
+    equipment_name VARCHAR(150) NOT NULL,
+    equipment_number INT NOT NULL,
+    equipment_description TEXT,
+    equipment_image VARCHAR(255),
+    equipment_status ENUM('available', 'unavailable', 'maintenance') DEFAULT 'available'
+);
+
+-- 3. TRAINERS 
+CREATE TABLE trainers (
+    trainer_id INT AUTO_INCREMENT PRIMARY KEY,
+    trainer_name VARCHAR(100) NOT NULL,
+    training_type VARCHAR(100),
+    status ENUM('available', 'busy', 'not_on_duty') DEFAULT 'available'
+);
+
+-- 4. EQUIPMENT SCHEDULE
+CREATE TABLE equipment_schedule (
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    equipment_id INT NOT NULL,
+    schedule_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_user_booking (user_id, schedule_date, start_time),
+    
+    -- Block Saturdays (5)
+    CHECK (WEEKDAY(schedule_date) != 5), 
+    
+    -- Strict Hours (Sun: 8:00-19:30, Weekdays: 8:00-21:30)
+    CHECK (
+        (WEEKDAY(schedule_date) BETWEEN 0 AND 4 AND start_time BETWEEN '08:00:00' AND '21:30:00')
+        OR
+        (WEEKDAY(schedule_date) = 6 AND start_time BETWEEN '08:00:00' AND '19:30:00')
+    ),
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (equipment_id) REFERENCES equipment(equipment_id) ON DELETE CASCADE
+);
+
+-- 5. TRAINER SCHEDULE
+CREATE TABLE trainer_schedule (
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    trainer_id INT NOT NULL,
+    schedule_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_trainer_booking (trainer_id, schedule_date, start_time),
+    UNIQUE KEY unique_user_booking (user_id, schedule_date, start_time),
+
+    CHECK (WEEKDAY(schedule_date) != 5),
+    CHECK (
+        (WEEKDAY(schedule_date) BETWEEN 0 AND 4 AND start_time BETWEEN '08:00:00' AND '21:30:00')
+        OR
+        (WEEKDAY(schedule_date) = 6 AND start_time BETWEEN '08:00:00' AND '19:30:00')
+    ),
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id) REFERENCES trainers(trainer_id) ON DELETE CASCADE
+);
+
+-- 6. AUDIT LOG
+CREATE TABLE audit_log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    username VARCHAR(50),
+    action VARCHAR(255),
+    token TEXT,
+    log_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- 7. DATA INSERTION
+INSERT IGNORE INTO equipment (equipment_name, equipment_number, equipment_description, equipment_status, equipment_image) VALUES 
+('Advanced Treadmill', '5','High-speed treadmill', 'available', 'treadmill.jpg'),
+('Olympic Bench Press', '5','Standard flat bench', 'available', 'bench.jpg'),
+('Squat Rack Pro', '5','Safety power cage', 'available', 'squat_rack.jpg'),
+('Cable Crossover', '3','Multi-functional cable', 'available', 'Cable_Crossover.jpg'),
+('Leg Press 45', '5','Plate-loaded leg press', 'available', 'leg_press.jpg'),
+('Elliptical Runner', '10','Low impact cardio', 'maintenance', 'elliptical.jpg'),
+('Concept2 Rower', '10','Air resistance rower', 'available', 'rower.jpg');
+
+INSERT IGNORE INTO trainers (trainer_name, training_type, status) VALUES 
+('John Doe', 'Bodybuilding', 'available'),
+('Sarah Connor', 'HIIT & Cardio', 'available'),
+('Mike Tyson', 'Boxing', 'available'),
+('Jane Fonda', 'Aerobics & Yoga', 'available'),
+('Ronnie Coleman', 'Powerlifting', 'busy'),
+('Bruce Lee', 'Martial Arts', 'available');

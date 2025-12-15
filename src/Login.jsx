@@ -71,13 +71,15 @@ const LoginScreen = () => {
             // 2. CHECK RESPONSE
             // Assuming your server returns: { success: true, user: { user_id: 1, username: "..." } }
             if (response.data.success) {
-                const userData = response.data.user;
+                const { user, token } = response.data;
 
-                // 3. SAVE REAL USER DATA TO STORAGE
-                // This overwrites any previous session with the correct ID from the DB
-                localStorage.setItem("user", JSON.stringify(userData));
+                // 1. Save Token to LocalStorage
+                localStorage.setItem("token", token);
+                
+                // 2. Save User Info to LocalStorage
+                localStorage.setItem("user", JSON.stringify(user));
 
-                console.log("Login Successful:", userData); // Debugging
+                console.log("Login Successful. Token saved.");
                 
                 setSuccess(true);
                 navigate('/dashboard', { replace: true });
@@ -86,14 +88,11 @@ const LoginScreen = () => {
             }
 
         } catch (err) {
+            // ... existing error handling ...
             if (!err?.response) {
-                setErrMsg('No Server Response (Is Backend Running?)');
-            } else if (err.response?.status === 400) {
-                setErrMsg('Missing Username or Password');
+                setErrMsg('No Server Response');
             } else if (err.response?.status === 401) {
-                setErrMsg('Unauthorized: Incorrect Username or Password');
-            } else if (err.response?.status === 404) {
-                setErrMsg('User not found');
+                setErrMsg('Invalid Username or Password');
             } else {
                 setErrMsg('Login Failed');
             }
@@ -115,11 +114,11 @@ const LoginScreen = () => {
                     <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"}>{errMsg}</p>
                     
                     <div className="welcome">
-                        <img src={welcome_icon} alt="" style={{ width: '35px', height: '40px' }}/>
+                        <img src={welcome_icon} alt="" style={{ width: '35px', height: '40px', marginLeft: '-39px'}}/>
                         <div>WELCOME Back</div>               
                     </div>
                     
-                    <div className="createaccount">Sign in to your account</div>
+                    <div className="createaccount" style={{ width: '300px', marginLeft:'110px'}}>Sign in to your account</div>
                     <div className="underline"></div>
                     
                     <form onSubmit={handleSubmit}>
@@ -181,15 +180,26 @@ const LoginScreen = () => {
                                 </p>
                             
 
-                            {/* Sign Up Link */}
-                            <Link to="/register" className="signup">Sign up</Link> 
+                           
 
                             {/* LOGIN BUTTON */}
+                            <div className="submit">
                             <button disabled={!validName || !validPwd || loading} type="submit">
                                 {loading ? 'Logging In...' : 'Login'}
                             </button>
+                            </div>
+                                
+<div style={{ textAlign: "center", marginTop: "10px" }}>
+    <Link to="/forgot-password" style={{ fontSize: "12px", color: "#333", textDecoration: "none" }}>
+        Forgot Password?
+    </Link>
+</div>
+
+  
 
                         </div>
+                         {/* Sign Up Link */}
+                            <Link to="/register" className="signup">Sign up</Link> 
                     </form>
                 </div>
             )}

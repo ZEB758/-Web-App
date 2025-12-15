@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from "react";
-import axios from "./axios"; // Your custom axios instance
+import axios from "./axios"; 
 import { useNavigate } from "react-router-dom";
 import "./Profile.css"; 
 
-// Import both icons
-import userIcon from "./Assets/user_full.png";       // Male / Default icon
-import girlicon from "./Assets/user-icon-girl.png";  // Female icon
+import userIcon from "./Assets/user_full.png";       
+import girlicon from "./Assets/user-icon-girl.png";  
 
 const Profile = () => {
     const navigate = useNavigate();
     
-    // State covers both Read-Only (Auth) and Editable (Profile) data
     const [formData, setFormData] = useState({
         user_id: "",
         username: "", 
@@ -25,11 +23,9 @@ const Profile = () => {
     const [message, setMessage] = useState("");
 
     useEffect(() => {
-        // 1. Check LocalStorage for logged-in user
         const storedUser = localStorage.getItem("user");
-        
         if (!storedUser) {
-            navigate("/"); // Redirect to login
+            navigate("/"); 
             return;
         }
 
@@ -42,16 +38,14 @@ const Profile = () => {
             return;
         }
 
-        // 2. Fetch Data from Database
         axios.get(`/profile/${activeUserId}`)
             .then((res) => {
                 if (res.data.success) {
                     const data = res.data.data;
-
-                    // Format Date for HTML input (YYYY-MM-DD)
                     let formattedDate = "";
                     if (data.date_of_birth) {
-                        formattedDate = new Date(data.date_of_birth).toISOString().split('T')[0];
+                        const d = new Date(data.date_of_birth);
+                        formattedDate = d.toISOString().split('T')[0];
                     }
 
                     setFormData({
@@ -64,12 +58,12 @@ const Profile = () => {
                         membership_status: data.membership_status || "Standard"
                     });
                 } else {
-                    setMessage("Failed to load user data from database.");
+                    setMessage("Failed to load user data.");
                 }
             })
             .catch((err) => {
                 console.error("Axios Error:", err);
-                setMessage("Server error. Is the backend running?");
+                setMessage("Server error.");
             })
             .finally(() => {
                 setLoading(false);
@@ -93,6 +87,12 @@ const Profile = () => {
             });
 
             if (res.data.success) {
+                // --- NEW: Update LocalStorage so Dashboard sees the change immediately ---
+                const storedUser = JSON.parse(localStorage.getItem("user"));
+                const updatedUser = { ...storedUser, gender: formData.gender };
+                localStorage.setItem("user", JSON.stringify(updatedUser));
+                // -----------------------------------------------------------------------
+
                 setMessage("Profile saved successfully!");
                 setTimeout(() => setMessage(""), 3000);
             } else {
@@ -110,15 +110,14 @@ const Profile = () => {
         <div className="container profile-container">
             <div className="welcome">
                 <div className="welcome-left">
-                    {/* --- DYNAMIC ICON LOGIC HERE --- */}
                     <img 
                         src={formData.gender === "Female" ? girlicon : userIcon} 
                         alt="user" 
                         style={{ width: 35, height: 40 }} 
                     />
-                    <div>MY PROFILE</div>
+                    <div>My Profile</div>
                 </div>
-                <button onClick={() => navigate("/dashboard")} className="back-btn">
+                <button onClick={() => navigate("/dashboard")} className="bac-btn">
                     Back to Dashboard
                 </button>
             </div>
@@ -131,7 +130,6 @@ const Profile = () => {
 
             <form onSubmit={handleSubmit} className="profile-form">
                 
-                {/* 1. READ ONLY FIELDS */}
                 <div className="section-header">Account Information</div>
                 
                 <div className="input-group">
@@ -151,7 +149,6 @@ const Profile = () => {
 
                 <hr className="divider" />
 
-                {/* 2. EDITABLE FIELDS */}
                 <div className="section-header">Personal Details</div>
                 
                 <div className="input-group">
@@ -166,12 +163,10 @@ const Profile = () => {
 
                 <div className="input-group">
                     <label>Gender</label>
-                    {/* The icon changes immediately when this select is changed */}
                     <select name="gender" value={formData.gender} onChange={handleChange}>
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
-                        <option value="Other">Other</option>
                     </select>
                 </div>
 

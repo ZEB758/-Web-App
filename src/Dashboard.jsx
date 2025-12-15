@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Dashboard.css";
-import axios from "./axios"; // Custom axios instance
+import axios from "./axios"; 
 
 // Icons
 import userIcon from "./Assets/user_full.png";
+import girlicon from "./Assets/user-icon-girl.png";
 import notificationIcon from "./Assets/Notification_2.png";
 import settingsIcon from "./Assets/setting_icon1.png";
 import recentIcon from "./Assets/recent_icon.png";
@@ -13,7 +14,7 @@ import favoriteIcon from "./Assets/favorite-icon.jpg";
 
 // FontAwesome
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDumbbell, faUserTie, faClock, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faDumbbell, faUserTie, faClock, faTimes, faSignOutAlt, faBell } from "@fortawesome/free-solid-svg-icons";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,27 +25,83 @@ const Dashboard = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [dates, setDates] = useState([]);
   const [user, setUser] = useState(null);
+  const [userGender, setUserGender] = useState(""); 
 
   // Schedule Modal State
   const [showSchedule, setShowSchedule] = useState(false);
   const [mySchedule, setMySchedule] = useState([]);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
 
+  // --- NEW: NOTIFICATION STATE ---
+  const [notifications, setNotifications] = useState([]); // Stores today's bookings
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+
   const months = [
     "January","February","March","April","May","June",
     "July","August","September","October","November","December"
   ];
 
-  // Load User & Calendar
+  // Load User & Calendar & Check Notifications
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      
+// 2. Fetch latest profile data to be sure (handles fresh logins)
+      axios.get(`/profile/${parsedUser.user_id}`)
+        .then(res => {
+            if (res.data.success && res.data.data.gender) {
+                setUserGender(res.data.data.gender);
+                // Optional: Update local storage to sync
+                const updated = { ...parsedUser, gender: res.data.data.gender };
+                localStorage.setItem("user", JSON.stringify(updated));
+            }
+        })
+        .catch(err => console.log("Profile load error", err));
+
+      // Fetch notifications immediately
+      checkTodayBookings(parsedUser.user_id);
     }
     renderCalendar(currentMonth, currentYear);
   }, [currentMonth, currentYear]);
 
-  // Fetch Schedule
+  // --- NEW: FETCH TODAY'S BOOKINGS ---
+  const checkTodayBookings = async (userId) => {
+    try {
+        const res = await axios.get(`/api/my-schedule/${userId}`);
+        if (res.data.success) {
+            const allBookings = res.data.data;
+            
+            // Get local YYYY-MM-DD for today
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const localTodayStr = `${year}-${month}-${day}`;
+
+            // Filter for bookings happening TODAY
+            const todays = allBookings.filter(item => {
+                // Ensure we compare strings properly (MySQL dates often come as ISO or YYYY-MM-DD)
+                // We take the first 10 chars to be safe
+                const itemDate = item.schedule_date.substring(0, 10);
+                return itemDate === localTodayStr;
+            });
+            
+            setNotifications(todays);
+        }
+    } catch (err) {
+        console.error("Error checking notifications", err);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
+  // Fetch Full Schedule (For bottom modal)
   const fetchMySchedule = async () => {
       if (!user) return;
       setLoadingSchedule(true);
@@ -60,15 +117,11 @@ const Dashboard = () => {
       }
   };
 
-  // Toggle Modal
   const toggleScheduleModal = () => {
-      if (!showSchedule) {
-          fetchMySchedule();
-      }
+      if (!showSchedule) fetchMySchedule();
       setShowSchedule(!showSchedule);
   };
 
-  // Calendar Logic
   const renderCalendar = (month, year) => {
     let days = [];
     const firstDay = new Date(year, month, 1).getDay();
@@ -93,7 +146,6 @@ const Dashboard = () => {
       setErrorMessage("Error: You cannot select a past date!");
       return;
     }
-    // Block Saturdays
     if (selected.getDay() === 6) {
         setErrorMessage("The Gym is closed on Saturdays.");
         return;
@@ -103,7 +155,6 @@ const Dashboard = () => {
     navigate("/select", { state: { date: formattedDate } });
   };
 
-  // Helper for Modal Date
   const formatDate = (dateString) => {
       const d = new Date(dateString);
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -113,25 +164,64 @@ const Dashboard = () => {
     <div className="main-body">
     <div className="container dashboard-container">
       
-      {/* --- NEW HEADER LAYOUT --- */}
       <div className="header-grid">
-          {/* LEFT: User Icon */}
           <div className="header-left">
-              <img src={userIcon} alt="User" />
+               <img 
+                src={userGender === "Female" ? girlicon : userIcon} 
+                alt="User" 
+              />
           </div>
 
-          {/* CENTER: Welcome Text */}
           <div className="header-center">
               <span className="welcome-sub">WELCOME BACK</span>
               <span className="welcome-name">{user ? user.username : "Guest"}</span>
           </div>
 
-          {/* RIGHT: Settings & Notif */}
           <div className="header-right">
-              <img src={notificationIcon} alt="Notification" />
+              
+              {/* --- MODIFIED NOTIFICATION ICON --- */}
+              <div 
+                className="notification-wrapper" 
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+              >
+                  <img src={notificationIcon} alt="Notification" />
+                  {/* RED BADGE if bookings exist */}
+                  {notifications.length > 0 && (
+                      <span className="notification-badge">{notifications.length}</span>
+                  )}
+
+                  {/* DROPDOWN POPUP */}
+                  {showNotifDropdown && (
+                      <div className="notification-dropdown">
+                          <div className="notif-header">Today's Schedule</div>
+                          {notifications.length === 0 ? (
+                              <div className="notif-empty">No bookings today.</div>
+                          ) : (
+                              notifications.map((n, idx) => (
+                                  <div key={idx} className="notif-item">
+                                      <FontAwesomeIcon icon={faClock} className="notif-icon-small"/>
+                                      <div>
+                                          <strong>{n.start_time.substring(0,5)}</strong>
+                                          <span> - {n.name}</span>
+                                      </div>
+                                  </div>
+                              ))
+                          )}
+                      </div>
+                  )}
+              </div>
+              
               <Link to="/profile">
                   <img src={settingsIcon} alt="Settings" />
               </Link>
+
+              <div 
+                onClick={handleLogout} 
+                style={{ cursor: 'pointer', marginLeft: '8px', display: 'flex', alignItems: 'center' }} 
+                title="Sign Out"
+              >
+                 <FontAwesomeIcon icon={faSignOutAlt} style={{ fontSize: '22px', color: '#555' }} />
+              </div>
           </div>
       </div>
 
@@ -184,7 +274,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* --- FOOTER: 3 Icons Equally Spaced --- */}
       <div className="footer">
           <div className="footer-item">
                <img src={recentIcon} alt="Recent" className="footer-icon"/>
@@ -201,7 +290,6 @@ const Dashboard = () => {
           </div>
       </div>
 
-      {/* --- SCHEDULE MODAL (Same as before) --- */}
       {showSchedule && (
         <div className="modal-overlay">
           <div className="modal-content slide-up">

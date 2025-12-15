@@ -262,7 +262,7 @@ const RegisterScreen = () => {
                                    className={emailFocus && !validEmail ? "instructions" : "offscreen"}>
                                     <FontAwesomeIcon icon={faInfoCircle} /> Must be a valid email format.
                                 </p>
-<a href="/" className="login">Back to login page</a>
+
                                 <div className="submit">
                                     <button
                                         disabled={!validName || !validPwd || !validMatch || !validEmail}
@@ -273,7 +273,9 @@ const RegisterScreen = () => {
                                 </div>
 
                             </div>
+                            
                         </form>
+                        <a href="/" className="login">Back to login page</a>
                     </section>
                 )}
             </div>

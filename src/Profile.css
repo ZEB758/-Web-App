@@ -1,21 +1,68 @@
-body{
+body {
     background-color: #AFE1FF;
 }
+
 .profile-container {
     padding-bottom: 50px;
+    
+    /* Enable Scrolling */
+    overflow-y: auto !important;
+    max-height: 95vh;
+    display: block;
+    scrollbar-width: thin; 
 }
 
-.back-btn {
-    background: none;
+.profile-container::-webkit-scrollbar {
+    width: 8px;
+}
+.profile-container::-webkit-scrollbar-track {
+    background: transparent; 
+}
+.profile-container::-webkit-scrollbar-thumb {
+    background-color: #ccc; 
+    border-radius: 10px; 
+    border: 2px solid white;
+}
+
+/* --- HEADER ALIGNMENT (NEW) --- */
+.profile-container .welcome {
+    display: flex;
+    justify-content: space-between; /* Pushes items to opposite ends */
+    align-items: center;            /* Vertically centers them */
+    width: 100%;
+    margin-bottom: 15px;            /* Adds space below the header */
+}
+
+/* Groups the Icon and "My Profile" text together on the left */
+.welcome-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Button Styling */
+.bac-btn {
+    background: white;
     border: 1px solid #6C63FF;
     color: #6C63FF;
-    padding: 5px 10px;
-    border-radius: 5px;
+    padding: 8px 15px;     /* Increased padding for better look */
+    border-radius: 8px;
     cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s;
 }
 
+.bac-btn:hover {
+    background-color: #6C63FF;
+    color: white;
+}
+
+/* --- FORM STYLES --- */
 .profile-form {
-    margin-top: 20px;
+    margin-top: 10px;
     background: white;
     padding: 20px;
     border-radius: 15px;
@@ -49,16 +96,10 @@ body{
     font-size: 14px;
 }
 
-/* Read only inputs look slightly different */
 .read-only {
     background-color: #f0f0f0;
     color: #555;
     border: none;
-}
-
-.status-box {
-    font-weight: bold;
-    color: #2e7d32; /* Green text for status */
 }
 
 .save-btn {
